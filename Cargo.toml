@@ -2,6 +2,14 @@
 name = "socket-epoll-server"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"                 # edition 2024 needs 1.85+
+description = "Single-threaded Unix domain socket server built on Linux epoll"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/THEeLov/socket-epoll-server"
+readme = "README.md"
+keywords = ["epoll", "unix-socket", "server", "linux"]
+categories = ["network-programming", "os::linux-apis"]
+
 
 [dependencies]
 nix = { version = "0.31", features = ["event"] }
