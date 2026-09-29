@@ -41,3 +41,18 @@ impl<const N: usize> Poller<N> {
         Ok(self.events[..n].iter().map(EpollEvent::data).collect())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{io::Write, os::unix::net::UnixStream};
+
+    #[test]
+    fn wait_reports_token_of_readable_fd() {
+        let mut poller = Poller::<8>::build().unwrap();
+        let (a, mut b) = UnixStream::pair().unwrap();
+        poller.register(&a, 42).unwrap();
+        b.write_all(b"x").unwrap();
+        assert_eq!(poller.wait().unwrap(), vec![42]);
+    }
+}
