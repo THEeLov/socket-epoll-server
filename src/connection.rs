@@ -94,3 +94,47 @@ impl<S> Connection<S> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pair() -> (Connection<()>, UnixStream) {
+        let (server, client) = UnixStream::pair().unwrap();
+        server.set_nonblocking(true).unwrap();
+        (Connection::new(1, server, ()), client)
+    }
+
+    #[test]
+    fn unconsumed_input_is_kept_for_next_call() {
+        let (mut conn, mut client) = pair();
+        client.write_all(b"hello").unwrap();
+        conn.read_available().unwrap();
+
+        conn.process_input(|_, input| {
+            assert_eq!(input, b"hello");
+            2
+        });
+        conn.process_input(|_, input| {
+            assert_eq!(input, b"llo");
+            0
+        });
+    }
+
+    #[test]
+    fn read_returns_zero_when_client_hangs_up() {
+        let (mut conn, client) = pair();
+        drop(client);
+        assert_eq!(conn.read_available().unwrap(), 0);
+    }
+
+    #[test]
+    fn flush_sends_queued_output() {
+        let (mut conn, mut client) = pair();
+        conn.send(b"hi");
+        conn.flush().unwrap();
+        let mut buf = [0u8; 2];
+        client.read_exact(&mut buf).unwrap();
+        assert_eq!(&buf, b"hi");
+    }
+}
